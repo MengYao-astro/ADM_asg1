@@ -1,0 +1,14 @@
+l_discount-int64.csv
+l_discount-int8.csv
+l_extendedprice-int32.csv
+l_extendedprice-int64.csv
+l_linenumber-int32.csv
+l_linenumber-int8.csv
+l_orderkey-int32.csv
+l_partkey-int32.csv
+l_quantity-int64.csv
+l_quantity-int8.csv
+l_suppkey-int16.csv
+l_suppkey-int32.csv
+l_tax-int64.csv
+l_tax-int8.csv
