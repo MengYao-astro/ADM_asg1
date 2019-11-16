@@ -1,0 +1,5 @@
+l_extendedprice-int32.csv
+l_linenumber-int32.csv
+l_orderkey-int32.csv
+l_partkey-int32.csv
+l_suppkey-int32.csv
