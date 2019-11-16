@@ -6,26 +6,70 @@
 #include <sstream> // std::stringstream
 #include <utility> // std::pair
 #include <list>
+#include <typeinfo>
 
 using namespace std;
+string int8 = "int8";
+string int16 = "int16";
+string int32 = "int32";
+string int64 = "int64";
+string str = "string";
+
+/*
+
+#### En- and Decoding functions #####
+
+*/
+
+int reference_number(std::vector<int> array) {
+	int length = array.size();
+
+	// Compute average of first 50 elements and take that as reference number.
+	int sum = 0;
+	int boundary = 50;
+
+	for (int i = 0; i < boundary; i++ ) {
+		sum += array[i];
+	}
+
+	int ref_number = sum / boundary;
+
+	return ref_number;
+}
+
+// Frame of reference encoding
+std::vector<int> for_encoding(std::vector<int> array) {
+
+  // Calculate reference number
+  int ref_number = reference_number(array);
+	// Initialise encoded array.
+	std::vector<int> encoded_data;
+	int length = array.size();
+
+	// Compute encoded values.
+	for (int i = 0; i < length; i++) {
+		encoded_data.push_back(array[i] - ref_number);
+	}
+
+	// Return encoded_data.
+	return encoded_data;
+	}
+
+/*
+
+#### Data importing functions #####
+
+*/
+
 
 class data_set{
-private:
-  string int8 = "int8";
-  string int16 = "int16";
-  string int32 = "int32";
-  string int64 = "int64";
-  string str = "string";
-
-  // Access specifier
-public:
-
+  public:
   // Data members
   string set_loc;
   string set_name;
   string set_type;
 
-  std::vector<int8_t> data_int8;
+  std::vector<int> data_int8;
   std::vector<int16_t> data_int16;
   std::vector<int32_t> data_int32;
   std::vector<int64_t> data_int64;
@@ -44,44 +88,91 @@ public:
         istringstream buffer(line);
         buffer >> number;
         data_int8.push_back(number);
-      }
-      cout << "Size of data-set: " << data_int8.size()
-    }
-  }
+      } // while
+      cout << "Size of data-set: " << data_int8.size() << "\n";
+    } // if
+  } // void int8_reader
+
+  void int16_reader(string name){
+    cout << "Dtype: int16 \n";
+    string line;
+    int16_t number;
+    ifstream myFile(name);
+    if (myFile.is_open()){
+      while(!myFile.eof()){
+        getline(myFile,line);
+        istringstream buffer(line);
+        buffer >> number;
+        data_int16.push_back(number);
+      } // while
+      cout << "Size of data-set: " << data_int16.size() << "\n";
+    } // if
+  } // void int16_reader
+
+  void int32_reader(string name){
+    cout << "Dtype: int32 \n";
+    string line;
+    int32_t number;
+    ifstream myFile(name);
+    if (myFile.is_open()){
+      while(!myFile.eof()){
+        getline(myFile,line);
+        istringstream buffer(line);
+        buffer >> number;
+        data_int32.push_back(number);
+      } // while
+      cout << "Size of data-set: " << data_int32.size() << "\n";
+    } // if
+  } // void int32_reader
+
+  void int64_reader(string name){
+    cout << "Dtype: int64 \n";
+    string line;
+    int64_t number;
+    ifstream myFile(name);
+    if (myFile.is_open()){
+      while(!myFile.eof()){
+        getline(myFile,line);
+        istringstream buffer(line);
+        buffer >> number;
+        data_int64.push_back(number);
+      } // while
+      cout << "Size of data-set: " << data_int64.size() << "\n";
+    } // if
+  } // void int8_reader
+
+  void string_reader(string name){
+    cout << "Dtype: string \n";
+    string line;
+    ifstream myFile(name);
+    if (myFile.is_open()){
+      while(!myFile.eof()){
+        getline(myFile,line);
+        data_string.push_back(line);
+      } // while
+      cout << "Size of data-set: " << data_string.size() << "\n";
+    } // if
+  } // void string_reader
 
   void read_data(){
     cout << "Reading data from: " << set_loc+set_name << "\n";
     if (set_type.compare(int8)==0){
       int8_reader(set_loc+set_name);
     }//if
+    else if (set_type.compare(int16)==0){
+      int16_reader(set_loc+set_name);
+    } //else if
+    else if (set_type.compare(int32)==0){
+      int32_reader(set_loc+set_name);
+    } //else if
+    else if (set_type.compare(int64)==0){
+      int64_reader(set_loc+set_name);
+    } //else if
+    else if(set_type.compare(str)==0){
+      string_reader(set_loc+set_name);
+    } //else
   }// void read_data_int
-  /*
-  void read_data_sting(){
-    std::vector<string> data;
-    cout << "Reading data from: " << set_loc+set_name << "\n";
-    cout << "Data type: " << set_type << "\n";
 
-    // Preparing variables
-    string line;
-    // Reading file
-    ifstream myFile(set_loc+set_name);
-    if (myFile.is_open()){
-      while(!myFile.eof()){
-        getline(myFile,line);
-        data.push_back(line);
-      }// while
-    }// if
-  }// vector read_data_string
-
-  // Prints data set
-  void print(){
-    cout << "Printing first 10 rows from data set: " << set_name << "\n";
-    for (int i = 0; i < 10; i++){
-      cout << data.at(i) << "\n";
-    } //for
-    cout << "Total size of data_set = " << data.size() << "\n";
-  } // void print
-  */
 };// class data_set
 
 // Function that returns a list of all the file names
@@ -107,7 +198,14 @@ std::vector<string> getFileNames(string filename){
   return file_name_list;
 }
 
-void write_csv(std::string filename, std::vector<std::pair<std::string, std::vector<int>>> dataset){
+/*
+
+#### Data exporting functions #####
+
+*/
+
+
+void write_csv(std::string filename, std::vector<int> dataset){
     // Make a CSV file with one column of integer values
     // filename - the name of the file
     // colname - the name of the one and only column
@@ -118,23 +216,11 @@ void write_csv(std::string filename, std::vector<std::pair<std::string, std::vec
     cout << filename+"\n";
     std::ofstream myFile(filename);
 
-    // Send the column names to the stream
-    for(int j = 0; j < dataset.size(); ++j)
-    {
-        myFile << dataset.at(j).first;
-        if(j != dataset.size() - 1) myFile << ","; // No comma at end of line
-    } // for
-    myFile << "\n";
-
     // Send data to the stream
-    for(int i = 0; i < dataset.at(0).second.size(); ++i)
+    for(int i = 0; i < dataset.size(); ++i)
     {
-        for(int j = 0; j < dataset.size(); ++j)
-        {
-            myFile << dataset.at(j).second.at(i);
-            if(j != dataset.size() - 1) myFile << ","; // No comma at end of line
-        } // for
-        myFile << "\n";
+      myFile << dataset.at(i);
+      myFile << "\n";
     } // for
 
     // Close the file
@@ -142,8 +228,8 @@ void write_csv(std::string filename, std::vector<std::pair<std::string, std::vec
 
 } // void
 
-std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename){
 
+std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename){
   // Reads a CSV file into a vector of <string, vector<int> pairs where each pair represents <column name, column values>
 
   // Create a vector of <string, int vector> pairs to store the result
@@ -205,28 +291,52 @@ std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filen
     return result;
 
 }//vector
-
 int main() {
+  string dtype;
+  //cout << "Please give dtype: ";
+  //cin >> dtype;
+  // Setting name and directory of output
+  //string file_directory = "/home/vbuchem/Documents/ADM_asg1/";
+  string working_directory = "C:/Users/Christiaan/Documents/Studie/ADM/ADM_asg1/";
+  string data_directory = "C:/Users/Christiaan/Documents/Studie/ADM/ADM-2019-Assignment-1-data-T-SF-1/";
+  dtype = "int8";
+  string data_file_list;
 
-    // Setting name and directory of output
-    //string file_directory = "/home/vbuchem/Documents/ADM_asg1/";
-    string working_directory = "C:/Users/Christiaan/Documents/Studie/ADM/ADM_asg1/";
-    string data_directory = "C:/Users/Christiaan/Documents/Studie/ADM/ADM-2019-Assignment-1-data-T-SF-1/";
+  if (dtype.compare(int8)==0){
+      data_file_list = "data_list_int8.csv";
+    }//if
+  else if (dtype.compare(int16)==0){
+      data_file_list = "data_list_int16.csv";
+    } //else if
+  else if (dtype.compare(int32)==0){
+      data_file_list = "data_list_int32.csv";
+    } //else if
+  else if (dtype.compare(int64)==0){
+      data_file_list = "data_list_int64.csv";
+    } //else if
+  else if(dtype.compare(str)==0){
+      data_file_list = "data_list_string.csv";
+    } //else
+
+  // Reading file names
+  std::vector<string> files = getFileNames(working_directory+data_file_list);
+
+  //string dtype = "string";
+  //for (int i = 0; i < files.size(); i++){
+  for (int i = 0; i < 1; i++){
+    data_set dset;
+    dset.set_loc = data_directory;
+    dset.set_name = files.at(i);
+    dset.set_type = dtype;
+    dset.read_data();
+    // Frame of reference encoding
+    string file_name_for = files.at(i).erase(files.at(i).size()-3,3)+"for";
+	  std::vector<int> data_en_for = for_encoding(dset.data_int8);
+    write_csv(working_directory+file_name_for,data_en_for);
+  }
 
 
-    // Reading file names
-    string string_file = "string_list.csv";
-    vector<string> string_files = getFileNames(working_directory+string_file);
-    string int_file = "int_list.csv";
-    vector<string> int_files = getFileNames(working_directory+int_file);
 
-    string dtype = "int8";
-
-    data_set set_one;
-    set_one.set_loc = data_directory;
-    set_one.set_name = int_files.at(0);
-    set_one.set_type = dtype;
-    set_one.read_data();
 
     return 0;
 }
