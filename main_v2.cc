@@ -122,11 +122,13 @@ void bin_decoding(string filecom_name){
     vector<int> file_recover(file_length, 0);
     getline(file_com,l2_IDs);
     std::string element;
+
     while ((pos = l2_IDs.find(delimiter)) != std::string::npos){
         element = l2_IDs.substr(0,pos);
         l2_IDs.erase(0,pos+delimiter.length());
         IDs.push_back(stoi(element));
     }//while
+
     for(int i=0;i<IDs.size();i++){
         string sparse_line;
         getline(file_com, sparse_line);
@@ -136,6 +138,7 @@ void bin_decoding(string filecom_name){
             file_recover[stoi(element)] = IDs[i];
         }//while
     }//for
+
     cout << "\nDecoded data: \n";
     for(int i =0; i<10; i++){
         cout << file_recover[i] << endl;
@@ -278,27 +281,39 @@ void for_encoding(data_set dset){
   cout << "\nApplying frame of reference encoding. \n";
   // Calculate reference number
   int sum = 0;
-	int boundary = 50;
-	for (int i = 0; i < boundary; i++ ) {
-		sum += dset.data_int.at(i);
-	}
-	int ref_number = sum / boundary;
+  int boundary = 50;
+  for (int i = 0; i < boundary; i++ ) {
+          sum += dset.data_int.at(i);
+  }
+  int ref_number = sum / boundary;
 
-	//cout << ref_number << "\n";
+  //cout << ref_number << "\n";
+  cout << "first " << dset.data_int.at(0) << endl;
+  // Threshold for number of bits.
+  int max_bits = 4;
+  int escape_value = max_bits+1;
 
-	// Initialise encoded array.
-	std::vector<int> encoded_data;
-	int length = dset.data_int.size();
+  // Initialise encoded array.
+  std::vector<int> encoded_data;
+  int length = dset.data_int.size();
 
-	encoded_data.push_back(ref_number); // Added this line so the first element of the array is the ref_number
+  encoded_data.push_back(ref_number); // Added this line so the first element of the array is the ref_number
+  encoded_data.push_back(max_bits);
 
-	// Compute encoded values.
-	for (int i = 0; i < length; i++) { // Start at i = 1 because first element is ref_number
-		encoded_data.push_back(dset.data_int.at(i) - ref_number);
-		//if (i < 10) {
-		//	cout << dset.data_int.at(i) << " " << encoded_data[i+1] << "\n";
-		//}
-	}
+  // Compute encoded values.
+  for (int i = 0; i < length; i++) { // Start at i = 1 because first element is ref_number
+    int dif = dset.data_int.at(i) - ref_number;
+    if (dif <= max_bits ) {
+      encoded_data.push_back(dif);
+    }
+    else {
+      encoded_data.push_back(escape_value);
+      encoded_data.push_back(dset.data_int.at(i));
+    }
+    if (i < 20) {
+      //cout << dset.data_int.at(i) << " " << encoded_data[i+2] << "\n";
+    }
+  }
 
   // Write encoded data to csv
   string file_name_for = dset.set_name+".for";
@@ -326,12 +341,20 @@ void for_decoding(data_set dset) {
 	cout << "\nDecoded data: \n";
 
 	int ref_number = dset.data_int.at(0);
-	//cout << ref_number << "\n";
+  int max_bits = dset.data_int.at(1);
+  int escape_value = max_bits+1;
 
-	for(int i = 1; i < boundary+1; i++) {
-		cout << dset.data_int.at(i) + ref_number << endl;
+	for(int i = 2; i < boundary+2; i++) {
+    int cur_val = dset.data_int.at(i);
+    if (cur_val == escape_value) {
+      cout << dset.data_int.at(i+1) << endl;
+      i++;
+    }//if 
+    else {
+		  cout << dset.data_int.at(i) + ref_number << endl;
 		//cout << dset.data_int.at(i) << " ";	
-	}//for
+	  }//else
+  }//for
 	cout << "\n";
 }//void for_decoding
 
@@ -343,14 +366,28 @@ void dif_encoding(data_set dset){
 	std::vector<int> encoded_data;
 	int length = dset.data_int.size();
 
-	encoded_data.push_back(dset.data_int.at(0)); // First element is the same is normal array.
+	 // Setting a maximum bit size.
+  int max_bits = 6;
+  int escape_value = max_bits + 1;
 
+  encoded_data.push_back(max_bits);
+  encoded_data.push_back(dset.data_int.at(0)); // First element is the same is normal array.
+  cout << dset.data_int.at(0) << " " << encoded_data[0] << "\n";
+  cout << "after first " << endl;
 	// Compute encoded values.
 	for (int i = 1; i < length; i++) { 
-		encoded_data.push_back(dset.data_int.at(i) - dset.data_int.at(i-1)); // Compute difference.
-		if (i < 10) {
-      // Print values to see if it works as intended.
-			//cout << dset.data_int.at(i) << " " << encoded_data[i] << "\n"; 
+    int dif = dset.data_int.at(i) - dset.data_int.at(i-1);
+    if (dif > max_bits || dif < max_bits*-1) {
+      encoded_data.push_back(escape_value);
+      encoded_data.push_back(dset.data_int.at(i));
+    }//if 
+
+    else {
+      encoded_data.push_back(dif); // Compute difference.
+    }//else
+		
+    if (i < 10) {
+      cout << dset.data_int.at(i) << " " << encoded_data[i] << "\n"; //Print values to see if it works as intended.
 		}//if
 	}//for 
 
@@ -373,12 +410,23 @@ void dif_decoding(data_set dset) {
   cout << "\nDecoding differential encoded file. \n";
 	int boundary = 10;
 	cout << "\nDecoded data: \n";
-	cout << dset.data_int.at(0) << endl;
-	int sum = dset.data_int.at(0);
 
-	for(int i = 1; i < boundary; i++) {
-		sum += dset.data_int.at(i);
-		cout << sum << endl;
+  int max_bits = dset.data_int.at(0);
+  int escape_value = max_bits + 1;
+
+	cout << dset.data_int.at(1) << "\n";
+	int sum = dset.data_int.at(1);
+  for(int i = 2; i < boundary+1; i++) {
+    int cur_val = dset.data_int.at(i);
+		//cout << cur_val << endl;
+    if (cur_val == 7) {
+      i++;
+      sum = dset.data_int.at(i);
+    }//if 
+    else {
+      sum += dset.data_int.at(i);
+    }//else
+    cout << sum << "\n";
 	}//for
 	cout << "\n";
 }//void dif_decoding
@@ -393,24 +441,23 @@ int main(){
   string data_directory = "/data1/vbuchem/ADM-2019-Assignment-1-data-T-SF-1/";
   string en = "en";
   
-  //string fname;
-  //string en_de; 
-  //string dtype;
+  string fname;
+  string en_de; 
+  string dtype;
 
   cout << "Please enter the name of the file: ";
-  //cin >> fname;
+  cin >> fname;
   cout << "\nEncode (\"en\") or decode (\"de\"): ";
-  //cin >> en_de;
+  cin >> en_de;
   cout << "\nData type: ";
-  //cin >> dtype;
+  cin >> dtype;
   cout << endl;
+
   //string fname = "l_shipmode-string.csv";  
-  string fname = "l_tax-int64.bin"; 
-  string en_de = "en";
-  string dtype = "int64";
+  //string fname = "l_tax-int64.dif"; 
+  //string en_de = "de";
+  //string dtype = "int64";
   
-
-
 
   if (en_de.compare(en)==0){ // The encoding algorithm
     string csv = ".csv";
@@ -421,10 +468,10 @@ int main(){
     dset.read_data(csv);
     
     //Dictionary encoding
-    //dic_encoding(dset);
+    dic_encoding(dset);
 
     //Run-length encoding
-    //rl_encoding(dset);
+    rl_encoding(dset);
 
     // Exception for string data
     if (dtype.compare(str)!=0){
@@ -433,10 +480,10 @@ int main(){
       bve_encoding(dset);
       
       //Frame of reference encoding
-      //for_encoding(dset);
+      for_encoding(dset);
       
       //Differential encoding
-      //dif_encoding(dset);
+      dif_encoding(dset);
 
     }//if 
   }//if 
@@ -455,17 +502,17 @@ int main(){
     if (ct.compare(ct_bin) == 0){
       cout << "Detected .bin format." << endl;
       bin_decoding(data_directory+fname);
-    }
+    }//if
 
     else if (ct.compare(ct_rle) == 0){
       cout << "Detected .rle format." << endl;
       rl_decoding(data_directory+fname);
-    }
+    }//else if
     
     else if (ct.compare(ct_dic) == 0){
       cout << "Detected .dic format." << endl;
       dic_decoding_string(data_directory+fname);
-    }
+    }//else if
     
     else if (ct.compare(ct_for) == 0){
       cout << "Detected .for format." << endl;
@@ -475,7 +522,7 @@ int main(){
 		  dset.set_type = dtype;
 		  dset.read_data(".for");
 			for_decoding(dset);
-    }
+    }//else if
 
     else if (ct.compare(ct_dif) == 0){
       cout << "Detected .dif format." << endl;
@@ -485,6 +532,6 @@ int main(){
 		  dset.set_type = dtype;
 		  dset.read_data(".dif");
 			dif_decoding(dset);
-    }
-  }
-}
+    }//else if
+  }//else
+}//int main()
