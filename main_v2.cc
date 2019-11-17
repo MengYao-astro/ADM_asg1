@@ -5,6 +5,7 @@
 #include <stdexcept> // std::runtime_error
 #include <sstream> // std::stringstream
 #include <utility> // std::pair
+#include <algorithm>
 using namespace std;
 
 string str = "string";
@@ -83,8 +84,6 @@ void rl_encoding(data_set dset){
     
     // Preparing output file
     string file_name_rle = dset.set_loc+dset.set_name+".rle"; 
-    ofstream file_com;
-    //file_com.open(file_name_rle, ofstream::app);
     std::ofstream myFile(file_name_rle);
     // Running through data
     for(int i=0; i < file.size();i++){
@@ -98,8 +97,7 @@ void rl_encoding(data_set dset){
             rl_chunk.run_length = 1;
         }//else
     }//for
-    file_com.close();
-    //cout<<"Compressed"<<endl;
+    myFile.close();   
 }//void rl encoding 
 
 // --- Run-length decoding ---
@@ -114,21 +112,87 @@ void rl_decoding(string filecom_name){
       std::string delimiter = ";";
       size_t pos = 0;
       std::string peice;
-      while ((pos = line_copy.find(delimiter)) != std::string::npos)
-      {
+      while ((pos = line_copy.find(delimiter)) != std::string::npos){
           peice = line_copy.substr(0,pos);
           line_copy.erase(0,pos+delimiter.length());
       }
       int run_length = std::stoi(line_copy);
       size_t pos_value = line.find(delimiter);
       string value = line.substr(0,pos_value);
-      cout << "Decoded array:" << endl;
+      cout << "\nDecoded data: \n";
       for(int i=0; i < run_length; i++){
         cout << value << endl;  
       }//while
     }//for
+    file_com.close();
 }//void rl_decoding
 
+// --- Dictionary encoding ---
+void dic_encoding(data_set dset){
+    cout << "Applying dictionary encoding. \n";
+    // Passing data to new vector
+    std::vector<string> file = dset.data_string;
+    // Preparing variables    
+    std::vector<string> dictionary;
+    vector<long> indice;
+    std::vector<string>::iterator it;
+    
+    // Preparing output file 
+    string file_name_dic = dset.set_loc+dset.set_name+".dic"; 
+    std::ofstream myFile(file_name_dic);  
+    // Running through data  
+    for(int i=0; i < file.size();i++){
+        it = std::find (dictionary.begin(), dictionary.end(), file[i]);
+        if (it != dictionary.end()){
+            indice.push_back(it - dictionary.begin());
+        }//if
+        else{
+            indice.push_back(dictionary.size());
+            dictionary.push_back(file[i]);
+        }//else
+    }//for
+    for (int i=0; i<dictionary.size(); i++){
+        myFile << dictionary[i] << ";";
+    }//for
+    myFile <<endl;
+    for (int i=0; i<indice.size(); i++){
+        myFile << indice[i] << ";";
+    }//for
+    myFile.close();
+}//void dic_encoding_string
+
+// --- Dictionary decoding --- 
+void dic_decoding_string(string filecom_name){
+    cout << "Decoding dictionary encoded file. \n";
+    ifstream file_com;
+    file_com.open(filecom_name);
+    string line1,line2;
+    vector<string> dictionary;
+    vector<int> indice;
+    std::string delimiter = ";";
+    size_t pos = 0;
+    getline(file_com,line1);
+    std::string element;
+    while ((pos = line1.find(delimiter)) != std::string::npos){
+        element = line1.substr(0,pos);
+        line1.erase(0,pos+delimiter.length());
+        dictionary.push_back(element);
+    }//while
+    getline(file_com, line2);
+    int count = 0;    
+    while (((pos = line2.find(delimiter)) != std::string::npos) && (count<10)){
+        count++;        
+        int index = std::stoi(line2.substr(0,pos));
+        line2.erase(0,pos+delimiter.length());
+        indice.push_back(index);
+    }//while
+    file_com.close();
+    cout << "\nDecoded data: \n";
+    for(int i=0; i < 10;i++){
+        cout << dictionary[indice[i]] << endl;
+    }
+    cout << endl;
+}//void dic_decoding
 
 // --- Frame of reference encoding --- 
 void for_encoding(data_set dset){
@@ -179,7 +243,7 @@ void for_decoding(data_set dset) {
 	// Don't print all values but only the first 50 values.
 	int boundary = 10;
 	
-	cout << "\nDecoded array: \n";
+	cout << "\nDecoded data: \n";
 
 	int ref_number = dset.data_int.at(0);
 	//cout << ref_number << "\n";
@@ -227,7 +291,7 @@ void dif_encoding(data_set dset){
 // --- Differential decoding --- 
 void dif_decoding(data_set dset) {
 	int boundary = 10;
-	cout << "\nDecoded array: \n";
+	cout << "\nDecoded data: \n";
 	cout << dset.data_int.at(0) << endl;
 	int sum = dset.data_int.at(0);
 
@@ -259,18 +323,23 @@ int main(){
 
   string working_directory = "/home/vbuchem/Documents/ADM_asg1/";
   string data_directory = "/data1/vbuchem/ADM-2019-Assignment-1-data-T-SF-1/";
+  string en = "en";
 
 
   cout << "Please enter the name of the file: \n";
   //cin << fname;
-  string fname = "l_tax-int64.for";
   cout << "Would you like to decode (\"de\") or encode (\"en\") the file? \n";
   //cin << en_de;
-  string en_de = "de";
   cout << "What is the data type of the file? \n";
   //cin << dtype;
-  string dtype = "int64";
-  string en = "en";
+  
+  //string fname = "l_shipmode-string.dic";  
+  string fname = "l_tax-int64.csv"; 
+  string en_de = "en";
+  string dtype = "int";
+  
+
+
 
   if (en_de.compare(en)==0){ // The encoding algorithm
     string csv = ".csv";
@@ -279,19 +348,27 @@ int main(){
     dset.set_name = fname.substr(0,fname.size()-4);
     dset.set_type = dtype;
     dset.read_data(csv);
+    
+    //Dictionary encoding
+    dic_encoding(dset);
 
     //Run-length encoding
-    //rl_encoding(dset);
+    rl_encoding(dset);
 
-    //Bit vector encoding 
-    //bve_encoding(dset);
+    // Exception for string data
+    if (dtype.compare(str)!=0){
 
-    //Frame of reference encoding
-    for_encoding(dset);
-    
-    //Differential encoding
-    //dif_encoding(dset);
-  }
+      //Bit vector encoding 
+      //bve_encoding(dset);
+      
+      //Frame of reference encoding
+      //for_encoding(dset);
+      
+      //Differential encoding
+      //dif_encoding(dset);
+
+    }//if 
+  }//if 
 
   else { // The decoding algorithm
 
@@ -315,6 +392,8 @@ int main(){
     
     else if (ct.compare(ct_dic) == 0){
       cout << "Detected .dic format." << endl;
+      if (dtype.compare(str)==0){dic_decoding_string(data_directory+fname);}
+      //else {dic_decoding_string(data_directory+fname)}    
     }
     
     else if (ct.compare(ct_for) == 0){
