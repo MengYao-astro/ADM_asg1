@@ -46,8 +46,8 @@ void write_csv(std::string filename, std::string colname, std::vector<int> vals)
 void dic_encoding(std::vector<string> file)
 {
     vector<string> dictionary;
-    vector<int> indice;
-    std::vector<int>::iterator it;
+    vector<long> indice;
+    std::vector<string>::iterator it;
     ofstream file_com;
     file_com.open("/Users/mengyao/work/ADM/dic_compress/dic_en.txt", ofstream::app);
     for(int i=0; i < file.size();i++)
@@ -55,18 +55,21 @@ void dic_encoding(std::vector<string> file)
         it = std::find (dictionary.begin(), dictionary.end(), file[i]);
         if (it != dictionary.end())
         {
-            int index = it - dictionary.begin() ;
-            indice.push_back(index);
+            indice.push_back(it - dictionary.begin());
         }
         else
         {
             indice.push_back(dictionary.size());
             dictionary.push_back(file[i]);
         }
+    }
     for (int i=0; i<dictionary.size(); i++)
+    {
         file_com << dictionary[i] << ";";
+    }
     file_com<<endl;
-    for (int i=0; i<dictionary.size(); i++)
+    for (int i=0; i<indice.size(); i++)
+    {
         file_com << indice[i] << ";";
     }
     
