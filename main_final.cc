@@ -466,7 +466,7 @@ int main(){
     dset.read_data(csv);
     
     //Dictionary encoding
-    //dic_encoding(dset);
+    dic_encoding(dset);
 
     //Run-length encoding
     rl_encoding(dset);
@@ -475,7 +475,7 @@ int main(){
     if (dtype.compare(str)!=0){
 
       //Bit vector encoding 
-      //bve_encoding(dset);
+      bve_encoding(dset);
       
       //Frame of reference encoding
       for_encoding(dset);
